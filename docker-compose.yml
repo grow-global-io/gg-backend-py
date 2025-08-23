@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  gg-backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - model_cache:/root/.cache/huggingface
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - MODEL_ID=${MODEL_ID}
+    env_file:
+      - .env
+
+volumes:
+  model_cache:

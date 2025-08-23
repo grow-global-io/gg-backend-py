@@ -1,0 +1,20 @@
+# Ignore unnecessary files
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.venv
+venv/
+.git
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+*.log
+.DS_Store
+
+# Don't ignore the actual model files if you decide to bundle them
+!*.safetensors
+!*.bin
