@@ -26,7 +26,7 @@ classifier = pipeline('zero-shot-classification', model='facebook/bart-large-mnl
 client = InferenceClient(provider="together", api_key=HF_TOKEN)
 
 def detect_ai_or_human(text):
-  labels=['Human-written','AI-Writen' ]
+  labels=['Human-Written','AI-Written']
   result = classifier(text, candidate_labels = labels)
   return result['labels'][0], result['scores'][0]
 
@@ -61,14 +61,21 @@ def generate_image():
 def ai_or_human():
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+            
         text = data.get("text", "")
+        if not text:
+            return jsonify({"error": "Missing 'text' in request"}), 400
+            
         label, score = detect_ai_or_human(text)
 
-        if label == 'Human-written' and round(score, 2) <= .75:
-            label = 'AI-written'
+        # Fix the label comparison - match the actual labels from detect_ai_or_human
+        if label == 'Human-Written' and round(score, 2) <= 0.75:
+            label = 'AI-Written'
 
         report = f"The text is most likely {label} with a confidence of {score:.2f}"
-        return jsonify(report), 200
+        return jsonify({"result": report, "label": label, "confidence": round(score, 2)}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -76,26 +83,38 @@ def ai_or_human():
 
 @app.route("/predictprice/<locality>/<noOfYears>")
 def predictPrice(locality:str, noOfYears:int):
-  action_area_1 = df[df["Location"] == locality].iloc[0, 2:].astype(float)
-  action_area_1 = action_area_1.interpolate()
-  train_data = action_area_1.dropna()
-  train_data.index = train_data.index.astype(int)
-  
-  lastYear = int(train_data.index[-1])
-  X_train = train_data.index.values.reshape(-1, 1)  # Years
-  y_train = train_data.values  # Prices
-  model = LinearRegression()
-  model.fit(X_train, y_train)
-  X_predict = np.array([(lastYear + int(i)) for i in range(1, int(noOfYears) + 1)]).reshape(-1, 1)
-  predictions = model.predict(X_predict)
-  # Create a new Series for the predictions
-  rangerstr = [str(lastYear + int(i)) for i in range(1, int(noOfYears) + 1)] 
-  predictions_series = pd.Series(predictions.flatten(), index=rangerstr)
-  predictions_series = {year: round(value, 2) for year, value in predictions_series.items()}
-  # Combine the original data with predictions
-  new_data = {'2024': action_area_1[-1]}
-  new_data.update(predictions_series)
-  return jsonify(new_data), 200
+    try:
+        # Check if locality exists in the dataframe
+        if locality not in df["Location"].values:
+            return jsonify({"error": f"Locality '{locality}' not found in database"}), 404
+            
+        action_area_1 = df[df["Location"] == locality].iloc[0, 2:].astype(float)
+        action_area_1 = action_area_1.interpolate()
+        train_data = action_area_1.dropna()
+        
+        if len(train_data) < 2:
+            return jsonify({"error": "Insufficient data for prediction"}), 400
+            
+        train_data.index = train_data.index.astype(int)
+        
+        lastYear = int(train_data.index[-1])
+        X_train = train_data.index.values.reshape(-1, 1)  # Years
+        y_train = train_data.values  # Prices
+        model = LinearRegression()
+        model.fit(X_train, y_train)
+        X_predict = np.array([(lastYear + int(i)) for i in range(1, int(noOfYears) + 1)]).reshape(-1, 1)
+        predictions = model.predict(X_predict)
+        # Create a new Series for the predictions
+        rangerstr = [str(lastYear + int(i)) for i in range(1, int(noOfYears) + 1)] 
+        predictions_series = pd.Series(predictions.flatten(), index=rangerstr)
+        predictions_series = {year: round(value, 2) for year, value in predictions_series.items()}
+        # Combine the original data with predictions
+        new_data = {'current_year': str(lastYear), 'current_price': round(action_area_1[-1], 2)}
+        new_data.update(predictions_series)
+        return jsonify(new_data), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/")
