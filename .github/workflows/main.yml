@@ -43,10 +43,10 @@ jobs:
       - name: Docker Push
         run: docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/${{ env.IMAGE_REPO_NAME }}:${{ env.IMAGE_TAG }}
 
-      # - name: ECS Update
-      #   run: |
-      #     aws ecs update-service \
-      #     --cluster wyra \
-      #     --service wyra-dev-agentic-service \
-      #     --force-new-deployment \
-      #     --region ${{ env.AWS_DEFAULT_REGION }}
+      - name: ECS Update
+        run: |
+          aws ecs update-service \
+          --cluster gll-backend \
+          --service gg-backend-service \
+          --force-new-deployment \
+          --region ${{ env.AWS_DEFAULT_REGION }}
