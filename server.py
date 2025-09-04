@@ -13,7 +13,7 @@ from transformers import pipeline
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins="*")
 
 sheet_id = '1VUOiDUrvtUge8StvOoPecLe0aV4vU_3gYTQH8OAdphw'
 url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv'
@@ -141,4 +141,4 @@ def create_user():
     return jsonify(data), 201
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=8000)

@@ -1,5 +1,5 @@
 # Multi-stage build for model caching
-FROM python:3.11-slim as model-cache
+FROM python:3.11-slim AS model-cache
 
 # Install dependencies for downloading models
 RUN pip install --no-cache-dir transformers torch huggingface-hub
