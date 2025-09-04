@@ -3,14 +3,22 @@ import pandas as pd
 from flask_cors import CORS
 import numpy as np
 from sklearn.linear_model import LinearRegression
-from dotenv import load_dotenv
 import os
 import io
 from huggingface_hub import InferenceClient
 from transformers import pipeline
+from fetch_secrets import load_secrets_as_env
 
-# Load environment variables from .env
-load_dotenv()
+# Load secrets from AWS Secrets Manager
+# You can override this with environment variables if needed
+SECRET_NAME = os.getenv("AWS_SECRET_NAME", "gll-secret")
+AWS_REGION = os.getenv("AWS_REGION", "eu-north-1")
+
+try:
+    load_secrets_as_env(SECRET_NAME, AWS_REGION)
+except Exception as e:
+    print(f"Warning: Could not load secrets from AWS: {str(e)}")
+    print("Falling back to environment variables...")
 
 app = Flask(__name__)
 CORS(app, origins="*")
